@@ -4,16 +4,6 @@ from datetime import datetime
 import pandas as pd
 
 # =====================
-# DETEKSI KAMERA (AMAN UNTUK CLOUD)
-# =====================
-try:
-    import cv2
-    from pyzbar import pyzbar
-    CAMERA_AVAILABLE = True
-except Exception:
-    CAMERA_AVAILABLE = False
-
-# =====================
 # KONFIGURASI APLIKASI
 # =====================
 st.set_page_config(page_title="Aplikasi Kasir", layout="centered")
@@ -35,9 +25,6 @@ if "login" not in st.session_state:
     st.session_state.login = False
     st.session_state.user = None
     st.session_state.role = None
-
-if "barcode_kamera" not in st.session_state:
-    st.session_state.barcode_kamera = None
 
 # =====================
 # HALAMAN LOGIN
@@ -88,40 +75,7 @@ if st.sidebar.button("Logout"):
     st.session_state.login = False
     st.session_state.user = None
     st.session_state.role = None
-    st.session_state.barcode_kamera = None
     st.rerun()
-
-# =====================
-# FUNGSI SCAN BARCODE (LOCAL SAJA)
-# =====================
-if CAMERA_AVAILABLE:
-    def scan_barcode_camera():
-        cap = cv2.VideoCapture(0)
-        if not cap.isOpened():
-            st.error("Kamera tidak bisa dibuka")
-            return None
-
-        st.info("Arahkan barcode ke kamera (tekan Q untuk keluar)")
-
-        while True:
-            ret, frame = cap.read()
-            if not ret:
-                break
-
-            barcodes = pyzbar.decode(frame)
-            for barcode in barcodes:
-                kode = barcode.data.decode("utf-8")
-                cap.release()
-                cv2.destroyAllWindows()
-                return kode
-
-            cv2.imshow("Scan Barcode", frame)
-            if cv2.waitKey(1) & 0xFF == ord("q"):
-                break
-
-        cap.release()
-        cv2.destroyAllWindows()
-        return None
 
 # =====================
 # MENU KASIR
@@ -132,26 +86,10 @@ if menu == "Kasir":
     if "keranjang" not in st.session_state:
         st.session_state.keranjang = {}
 
-    st.markdown("### Input Barcode")
+    st.markdown("### Scan / Masukkan Barcode")
+    st.info("Gunakan barcode scanner atau ketik manual")
 
-    col1, col2 = st.columns([3, 1])
-
-    with col1:
-        barcode_manual = st.text_input("Ketik Barcode")
-
-    with col2:
-        if CAMERA_AVAILABLE:
-            if st.button("📷 Scan Kamera"):
-                hasil = scan_barcode_camera()
-                if hasil:
-                    st.session_state.barcode_kamera = hasil
-                    st.success(f"Barcode terbaca: {hasil}")
-                else:
-                    st.warning("Barcode tidak terbaca")
-        else:
-            st.info("Scan kamera hanya tersedia di mode lokal")
-
-    barcode = st.session_state.barcode_kamera or barcode_manual
+    barcode = st.text_input("Barcode Barang")
 
     if barcode:
         cursor.execute(
@@ -183,7 +121,6 @@ if menu == "Kasir":
                         "harga": harga,
                         "jumlah": jumlah
                     }
-                st.session_state.barcode_kamera = None
                 st.success("Barang ditambahkan ke keranjang")
         else:
             st.error("Barang tidak ditemukan")
@@ -257,7 +194,6 @@ if menu == "Kasir":
 
             conn.commit()
             st.session_state.keranjang = {}
-            st.session_state.barcode_kamera = None
             st.success("Transaksi berhasil disimpan")
 
 # =====================
