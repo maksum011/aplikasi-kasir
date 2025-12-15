@@ -6,7 +6,8 @@ cursor = conn.cursor()
 data_barang = [
     ("1234567890123", "Indomie Goreng", 3500, 50),
     ("9876543210987", "Teh Botol", 4000, 30),
-    ("1112223334445", "Susu UHT", 6000, 20)
+    ("1112223334445", "Susu UHT", 6000, 20),
+    ("8999898962533", "Susu diamond", 6000, 30),
 ]
 
 cursor.executemany(
